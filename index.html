@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PROJECT 90 | Pro</title>
+    <title>PROJECT 90 | Vision</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
@@ -25,44 +25,57 @@
             <h1 class="text-3xl font-black italic text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-violet-500 uppercase tracking-tighter">Project 90</h1>
             <p class="text-[10px] font-black text-slate-500 tracking-widest mt-1 uppercase">41 YRS • 185CM • MALE</p>
         </div>
-        <div class="bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700 font-black text-[10px] text-blue-400 uppercase">Target 90kg</div>
+        <div class="bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700 font-black text-[10px] text-blue-400 uppercase tracking-widest">Target 90kg</div>
     </header>
 
-    <div class="grid grid-cols-2 gap-4 mb-8 text-center">
+    <div class="grid grid-cols-2 gap-4 mb-6 text-center">
         <div class="glass-card p-5">
             <p class="text-[10px] text-slate-400 font-black uppercase mb-1 tracking-widest">Weight</p>
             <div class="flex items-end justify-center gap-1">
                 <span id="display-weight" class="text-3xl font-black text-white">100.0</span>
-                <span class="text-xs text-slate-500 mb-1 font-bold italic">KG</span>
+                <span class="text-xs text-slate-500 mb-1 font-bold italic uppercase">kg</span>
             </div>
         </div>
         <div class="glass-card p-5">
             <p class="text-[10px] text-slate-400 font-black uppercase mb-1 tracking-widest">Calories</p>
             <div class="flex items-end justify-center gap-1">
                 <span id="display-cals" class="text-3xl font-black text-emerald-400">0</span>
-                <span class="text-xs text-slate-500 mb-1 font-bold italic">KCAL</span>
+                <span class="text-xs text-slate-500 mb-1 font-bold italic uppercase">kcal</span>
             </div>
         </div>
     </div>
 
-    <div class="mb-8 grid grid-cols-3 gap-4">
-        <button onclick="logRun()" class="btn-action bg-violet-gradient"><span class="text-2xl mb-1">🏃‍♂️</span><span class="text-[10px] font-black uppercase">Run</span></button>
-        <button onclick="logMeal()" class="btn-action bg-emerald-gradient"><span class="text-2xl mb-1">🥗</span><span class="text-[10px] font-black uppercase">Meal</span></button>
-        <button onclick="logWeight()" class="btn-action bg-blue-gradient"><span class="text-2xl mb-1">⚖️</span><span class="text-[10px] font-black uppercase">Weight</span></button>
-    </div>
-
-    <div class="glass-card flex flex-col flex-1 max-h-[400px] overflow-hidden mb-4">
+    <div class="glass-card flex flex-col flex-1 max-h-[500px] overflow-hidden mb-4">
         <div class="px-5 py-3 border-b border-white/5 flex items-center justify-between bg-white/5">
-            <span class="text-[10px] font-black text-slate-300 tracking-widest uppercase italic">Coach Gemini</span>
+            <span class="text-[10px] font-black text-slate-300 tracking-widest uppercase italic">Vision Coach Online</span>
             <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
         </div>
+        
         <div id="chat-box" class="flex-1 overflow-y-auto p-5 text-sm space-y-4">
-            <div class="bg-slate-800/60 p-3 rounded-2xl rounded-tl-none border border-white/5 text-slate-200">System online. Goal 90kg verified. Let's work.</div>
+            <div class="bg-slate-800/60 p-3 rounded-2xl rounded-tl-none border border-white/5 text-slate-200">System online. Goal 90kg verified. Send a photo of your meal or talk to me!</div>
         </div>
+
         <div class="p-4 bg-slate-900/80 border-t border-white/5">
+            <div id="image-preview-container" class="hidden mb-3 flex items-center gap-3 bg-slate-800/40 p-2 rounded-xl border border-white/5">
+                <div class="relative">
+                    <img id="image-preview" src="" class="w-12 h-12 rounded-lg object-cover border border-violet-500">
+                    <button onclick="clearImage()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-[10px] flex items-center justify-center font-bold">✕</button>
+                </div>
+                <span class="text-[10px] font-black text-slate-400 uppercase italic">Image Ready</span>
+            </div>
+
             <div class="flex gap-2">
-                <input id="user-input" type="text" placeholder="Talk to coach..." onkeypress="if(event.key==='Enter') askCoach()" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-violet-500 text-white">
-                <button onclick="askCoach()" class="bg-violet-600 w-12 rounded-xl flex items-center justify-center active:scale-90"><span class="font-bold text-white">➔</span></button>
+                <input type="file" id="image-input" accept="image/*" class="hidden" onchange="previewImage(this)">
+                
+                <button onclick="document.getElementById('image-input').click()" class="bg-slate-800/80 w-12 rounded-xl flex items-center justify-center active:scale-90 border border-slate-700 text-xl">
+                    📸
+                </button>
+
+                <input id="user-input" type="text" placeholder="Tell coach..." onkeypress="if(event.key==='Enter') askCoach()" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-violet-500 text-white">
+                
+                <button onclick="askCoach()" class="bg-violet-600 w-12 rounded-xl flex items-center justify-center active:scale-90 shadow-lg">
+                    <span class="font-bold text-white">➔</span>
+                </button>
             </div>
         </div>
     </div>
@@ -70,23 +83,33 @@
     <script>
         let weight = 100.0;
         let calories = 0;
+        let selectedImageData = null;
 
-        function logRun() { const d = prompt("Distance (km)?"); if (d) addMessage(`Logged ${d}km run. 🔥`, 'ai'); }
-        function logMeal() { 
-            const m = prompt("Meal name?"); 
-            const c = prompt("Calories?"); 
-            if (c) { calories += parseInt(c); document.getElementById('display-cals').innerText = calories; addMessage(`Logged ${m} (+${c} kcal). 🥗`, 'ai'); } 
+        function previewImage(input) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    // Extract base64 without the prefix
+                    selectedImageData = e.target.result.split(',')[1];
+                    document.getElementById('image-preview').src = e.target.result;
+                    document.getElementById('image-preview-container').classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
         }
-        function logWeight() { 
-            const w = prompt("Current weight (kg)?"); 
-            if (w && !isNaN(w)) { weight = parseFloat(w); document.getElementById('display-weight').innerText = weight.toFixed(1); addMessage(`New weight: ${weight}kg. ⚖️`, 'ai'); } 
+
+        function clearImage() {
+            selectedImageData = null;
+            document.getElementById('image-input').value = '';
+            document.getElementById('image-preview-container').classList.add('hidden');
         }
 
         function addMessage(t, s) {
             const b = document.getElementById('chat-box');
             const m = document.createElement('div');
             if (s === 'user') m.className = "bg-violet-600 p-3 rounded-2xl rounded-tr-none ml-auto max-w-[85%] text-white shadow-lg";
-            else if (s === 'loading') { m.className = "bg-slate-800/60 p-3 rounded-2xl rounded-tl-none border border-white/5 text-slate-400 max-w-[85%] loading-dots"; m.id = "temp-loader"; m.innerText = "Coach is thinking"; }
+            else if (s === 'loading') { m.className = "bg-slate-800/60 p-3 rounded-2xl rounded-tl-none border border-white/5 text-slate-400 max-w-[85%] loading-dots"; m.id = "temp-loader"; m.innerText = "Coach is analyzing"; }
             else m.className = "bg-slate-800/60 p-3 rounded-2xl rounded-tl-none border border-white/5 text-slate-200 max-w-[85%]";
             if(s !== 'loading') m.innerText = t;
             b.appendChild(m);
@@ -96,24 +119,42 @@
         async function askCoach() {
             const i = document.getElementById('user-input');
             const val = i.value.trim();
-            if (!val) return;
-            addMessage(val, 'user');
+            if (!val && !selectedImageData) return;
+
+            addMessage(val || "Analyzing image content...", 'user');
             i.value = '';
+            
+            const imageDataToSend = selectedImageData;
+            clearImage(); 
             addMessage("", 'loading');
 
             try {
-                // Calling your Vercel Edge Function
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: val, weight: weight, calories: calories })
+                    body: JSON.stringify({ 
+                        message: val, 
+                        weight: weight, 
+                        calories: calories,
+                        image: imageDataToSend 
+                    })
                 });
+
                 const data = await response.json();
                 document.getElementById('temp-loader')?.remove();
-                addMessage(data.reply || "Coach had an error.", 'ai');
+                addMessage(data.reply || "Connection issue.", 'ai');
+
+                // Auto-update calories if AI suggests a number
+                if (data.reply.match(/\d+/)) {
+                    const foundCals = data.reply.match(/(\d+)\s*kcal/i);
+                    if (foundCals) {
+                        calories += parseInt(foundCals[1]);
+                        document.getElementById('display-cals').innerText = calories;
+                    }
+                }
             } catch (e) {
                 document.getElementById('temp-loader')?.remove();
-                addMessage("Connection timeout. Check Vercel logs.", 'ai');
+                addMessage("Coach had a timeout. Try again.", 'ai');
             }
         }
     </script>
