@@ -3,43 +3,47 @@ export const config = {
 };
 
 export default async function handler(req) {
-  if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'POST only' }), { status: 405 });
-  }
+  const { message, weight, calories } = await req.json();
+  const apiKey = process.env.GEMINI_API_KEY;
 
-  try {
-    const { message, weight, calories } = await req.json();
-    const apiKey = process.env.GEMINI_API_KEY;
+  // We will try these 3 names in order. One of them WILL work.
+  const models = [
+    "gemini-1.5-flash",
+    "gemini-1.5-pro",
+    "gemini-pro"
+  ];
 
-    // The "-latest" suffix usually solves the "model not found" error for new keys
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+  let lastError = "";
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ 
-          parts: [{ 
-            text: `Coach Gemini for Project 90. User: 41yo male, 185cm, ${weight}kg. Message: "${message}". Reply in 2 high-energy sentences with emojis.` 
-          }] 
-        }]
-      })
-    });
+  for (const modelName of models) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: `Coach Gemini: 41yo male, 100kg. Goal: 90kg. User: ${message}. 2 short sentences.` }] }]
+        })
+      });
 
-    const data = await response.json();
+      const data = await response.json();
 
-    if (data.error) {
-      return new Response(JSON.stringify({ reply: `GOOGLE ERROR: ${data.error.message}` }), { status: 200 });
+      // If this model works, return the reply immediately
+      if (data.candidates && data.candidates[0].content.parts[0].text) {
+        const reply = data.candidates[0].content.parts[0].text;
+        return new Response(JSON.stringify({ reply }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+      
+      lastError = data.error?.message || "Unknown error";
+    } catch (err) {
+      lastError = err.message;
     }
-
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Coach is recalibrating. Try again!";
-    
-    return new Response(JSON.stringify({ reply }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
-
-  } catch (err) {
-    return new Response(JSON.stringify({ reply: `CRASH: ${err.message}` }), { status: 200 });
   }
+
+  // If ALL models fail, tell us the last error
+  return new Response(JSON.stringify({ reply: `ALL MODELS FAILED. Last error: ${lastError}` }), { status: 200 });
 }
