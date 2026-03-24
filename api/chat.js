@@ -6,10 +6,13 @@ export default async function handler(req) {
     const apiKey = process.env.GEMINI_API_KEY;
 
     const systemPrompt = `You are Coach Gemini. Goal: Reach 90kg.
-    1. For food: Give Calories, Carbs, Protein, Fat.
-    2. To add a task to the Plan: Use 'ADD_PLAN: Task Name | [number]'. Replace [number] with a real calorie estimate.
-    3. Always include 'Estimated: [number] kcal' for food or 'Burned: [number] kcal' for exercise.
-    Be concise (max 3 sentences).`;
+    1. BE CONVERSATIONAL: If the user says "hi" or "hello", just greet them and ask for their status.
+    2. ONLY LOG DATA ON REQUEST: Use tags ONLY when the user mentions a specific meal, activity, or asks to add to their plan.
+    3. DATA FORMATS: 
+       - Food: 'Estimated: [number] kcal' + breakdown (Carbs/Protein/Fat).
+       - Activity: 'Burned: [number] kcal'.
+       - New Plan Task: 'ADD_PLAN: Task Name | [number]'.
+    4. Keep it under 3 sentences.`;
     
     const contents = [{
       parts: [{ text: `${systemPrompt}\n\nUser Weight: ${weight}kg\nMessage: ${message}` }]
