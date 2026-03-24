@@ -5,15 +5,20 @@ export default async function handler(req) {
     const { message, image, weight } = await req.json();
     const apiKey = process.env.GEMINI_API_KEY;
 
-    const systemPrompt = `You are Coach Gemini. Help the user reach 90kg.
-    - If food is mentioned: Include 'Estimated: [number] kcal' at the very end.
-    - If a workout is mentioned: Include 'Burned: [number] kcal' at the very end.
-    - To add to the plan tab: Include 'ADD_PLAN: Task Name | [number]' at the very end.
-    - Provide a short macro breakdown (Protein/Carbs/Fat) in the text.
-    - Maximum 3 sentences. No bolding or special characters in the tags.`;
-    
+    const systemPrompt = `You are an elite fitness coach. Help the user reach 90kg.
+    Respond ONLY in valid JSON format. 
+    JSON Structure:
+    {
+      "reply": "Your motivating response here (max 2 sentences)",
+      "macros": "Protein/Carbs/Fat breakdown string",
+      "calories_in": number or 0,
+      "calories_out": number or 0,
+      "add_to_plan": {"task": "Task name", "kcal": number} or null
+    }
+    Rules: If user mentions food, set calories_in. If activity, set calories_out. If they ask to add a workout, use add_to_plan.`;
+
     const contents = [{
-      parts: [{ text: `${systemPrompt}\n\nUser Weight: ${weight}kg\nMessage: ${message}` }]
+      parts: [{ text: `${systemPrompt}\n\nUser Weight: ${weight}kg. Message: ${message}` }]
     }];
 
     if (image && image.length > 50) {
@@ -24,15 +29,17 @@ export default async function handler(req) {
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents })
+      body: JSON.stringify({ 
+        contents,
+        generationConfig: { responseMimeType: "application/json" } 
+      })
     });
 
     const data = await response.json();
-    // FALLBACK: If Gemini returns nothing, we send a clear error message.
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Coach had a temporary glitch. Please try again.";
-    return new Response(JSON.stringify({ reply }), { status: 200 });
+    const replyJSON = data.candidates[0].content.parts[0].text;
+    return new Response(replyJSON, { status: 200, headers: { 'Content-Type': 'application/json' } });
 
   } catch (err) {
-    return new Response(JSON.stringify({ reply: "Coach connection lost." }), { status: 500 });
+    return new Response(JSON.stringify({ reply: "Coach is offline." }), { status: 500 });
   }
 }
