@@ -140,55 +140,42 @@ async function askCoach() {
         const res = await fetch('/api/chat', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ 
-                message: msg, 
-                weight: weightHistory[weightHistory.length-1], 
-                image: currentImg 
-            })
+            body: JSON.stringify({ message: msg, weight: weightHistory[weightHistory.length-1], image: currentImg })
         });
         const data = await res.json();
-        const replyText = data.reply;
+        let replyText = data.reply;
         document.getElementById('temp-loader')?.remove();
-        addMessage(replyText, 'ai');
 
-        // 1. Calorie Intake (e.g. Estimated: 300 kcal)
+        // --- DATA PARSING ---
         const inMatch = replyText.match(/Estimated:\s*(\d+)/i);
-        if(inMatch) { 
-            const amt = parseInt(inMatch[1]);
-            cIn += amt; 
-            lastAction = {type:'in', amount:amt}; 
-        }
+        if(inMatch) { cIn += parseInt(inMatch[1]); }
         
-        // 2. Calorie Burned (e.g. Burned: 200 kcal)
         const outMatch = replyText.match(/Burned:\s*(\d+)/i);
-        if(outMatch) { 
-            const amt = parseInt(outMatch[1]);
-            cOut += amt; 
-            lastAction = {type:'out', amount:amt}; 
-        }
+        if(outMatch) { cOut += parseInt(outMatch[1]); }
 
-        // 3. FIXED ADD_PLAN Regex: Catches tasks with numbers, dashes, and varied spacing
         const planMatch = replyText.match(/ADD_PLAN:\s*([^|]+)\|\s*(\d+)/i);
         if(planMatch) {
-            const taskName = planMatch[1].trim();
-            const taskKcal = parseInt(planMatch[2]);
-            
-            // Add to the local array
             dailyPlan.push({
                 id: Date.now(),
-                task: taskName,
-                kcal: taskKcal,
+                task: planMatch[1].trim(),
+                kcal: parseInt(planMatch[2]),
                 done: false
             });
-            
             localStorage.setItem('p90_plan', JSON.stringify(dailyPlan));
             renderPlan();
-            
-            // Subtle notification
-            addMessage(`Task "${taskName}" added to Plan.`, 'ai');
         }
 
+        // --- CLEAN THE MESSAGE FOR THE USER ---
+        // This removes the "ADD_PLAN", "Estimated", and "Burned" lines from what you see.
+        let cleanReply = replyText
+            .replace(/ADD_PLAN:.*$/gm, '')
+            .replace(/Estimated:.*$/gm, '')
+            .replace(/Burned:.*$/gm, '')
+            .trim();
+
+        addMessage(cleanReply || "Logged.", 'ai');
         saveAndSync();
+        
     } catch(e) { 
         document.getElementById('temp-loader')?.remove(); 
         addMessage("Connection glitch.", 'ai'); 
