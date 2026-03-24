@@ -115,51 +115,67 @@
             renderPlan();
         }
 
-        async function askCoach() {
-            const input = document.getElementById('user-input');
-            const msg = input.value;
-            if(!msg && !selectedImageData) return;
-            
-            addMessage(msg || "Analyzing...", 'user');
-            input.value = '';
-            const currentImg = selectedImageData;
-            clearImage();
-            addMessage("", 'loading');
+async function askCoach() {
+    const input = document.getElementById('user-input');
+    const msg = input.value;
+    if(!msg && !selectedImageData) return;
+    
+    addMessage(msg || "Analyzing...", 'user');
+    input.value = '';
+    const currentImg = selectedImageData;
+    clearImage();
+    addMessage("", 'loading');
 
-            try {
-                const res = await fetch('/api/chat', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ message: msg, weight: weightHistory[weightHistory.length-1], image: currentImg })
-                });
-                const data = await res.json();
-                let replyText = data.reply;
-                document.getElementById('temp-loader')?.remove();
+    try {
+        const res = await fetch('/api/chat', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ message: msg, weight: weightHistory[weightHistory.length-1], image: currentImg })
+        });
+        const data = await res.json();
+        let replyText = data.reply;
+        document.getElementById('temp-loader')?.remove();
 
-                // 1. DATA PARSING
-                const inMatch = replyText.match(/Estimated:\s*(\d+)/i);
-                if (inMatch) cIn += parseInt(inMatch[1]);
-                
-                const outMatch = replyText.match(/Burned:\s*(\d+)/i);
-                if (outMatch) cOut += parseInt(outMatch[1]);
+        // --- IMPROVED PARSING ---
+        // 1. Check for specific tags
+        const inMatch = replyText.match(/Estimated:\s*(\d+)/i);
+        const outMatch = replyText.match(/Burned:\s*(\d+)/i);
+        const planMatch = replyText.match(/ADD_PLAN:\s*([^|]+)\|\s*(\d+)/i);
 
-                const planMatch = replyText.match(/ADD_PLAN:\s*([^|]+)\|\s*(\d+)/i);
-                if (planMatch) {
-                    dailyPlan.push({ id: Date.now(), task: planMatch[1].trim(), kcal: parseInt(planMatch[2]), done: false });
-                    localStorage.setItem('p90_plan', JSON.stringify(dailyPlan));
-                    renderPlan();
-                }
-
-                saveAndSync();
-
-                // 2. CLEAN TEXT FOR DISPLAY
-                const cleanReply = replyText.split('\n')
-                    .filter(l => !l.toLowerCase().includes('add_plan:') && !l.toLowerCase().includes('estimated:') && !l.toLowerCase().includes('burned:'))
-                    .join('\n').trim();
-
-                addMessage(cleanReply || "Logged.", 'ai');
-            } catch(e) { document.getElementById('temp-loader')?.remove(); addMessage("Coach is offline.", 'ai'); }
+        if (inMatch) {
+            cIn += parseInt(inMatch[1]);
+        } else if (replyText.toLowerCase().includes("calories")) {
+            // FALLBACK: If tag is missing but 'calories' and a number exist, grab the number
+            const fallbackIn = replyText.match(/(\d+)\s*kcal/i);
+            if(fallbackIn) cIn += parseInt(fallbackIn[1]);
         }
+        
+        if (outMatch) {
+            cOut += parseInt(outMatch[1]);
+        }
+
+        if (planMatch) {
+            dailyPlan.push({ id: Date.now(), task: planMatch[1].trim(), kcal: parseInt(planMatch[2]), done: false });
+            localStorage.setItem('p90_plan', JSON.stringify(dailyPlan));
+            renderPlan();
+        }
+
+        saveAndSync();
+
+        // --- CLEAN TEXT ---
+        // Removes ALL technical lines regardless of capitalization
+        const cleanReply = replyText.split('\n')
+            .filter(l => !l.toLowerCase().includes('add_plan:') && 
+                         !l.toLowerCase().includes('estimated:') && 
+                         !l.toLowerCase().includes('burned:'))
+            .join('\n').trim();
+
+        addMessage(cleanReply || "Stats updated.", 'ai');
+    } catch(e) { 
+        document.getElementById('temp-loader')?.remove(); 
+        addMessage("Coach is offline.", 'ai'); 
+    }
+}
 
         function saveAndSync() {
             localStorage.setItem('p90_cals', cIn);
