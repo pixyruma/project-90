@@ -7,10 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    // Add this near your other 'let' variables
-let burned = parseInt(localStorage.getItem('p90_burned')) || 0;
-document.getElementById('dash-burn').innerText = burned;
-
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         body { background: #020617; color: #f8fafc; font-family: 'Inter', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; margin: 0; }
@@ -134,7 +131,8 @@ document.getElementById('dash-burn').innerText = burned;
         let calories = parseInt(localStorage.getItem('p90_cals')) || 0;
         let mealLog = JSON.parse(localStorage.getItem('p90_log')) || [];
         let selectedImageData = null;
-
+        let burned = parseInt(localStorage.getItem('p90_burned')) || 0;
+document.getElementById('dash-burn').innerText = burned;
         document.getElementById('dash-cals').innerText = calories;
 
         function switchTab(tabId, el) {
