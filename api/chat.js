@@ -6,6 +6,14 @@ export default async function handler(req) {
 
   // Build the content parts for Gemini
   const parts = [];
+  // ... inside your api/chat.js ...
+  const systemPrompt = `You are Coach Gemini. 
+  41yo male, 185cm, ${weight}kg. Goal: 90kg.
+  TASK: 
+  1. If user eats: Estimate kcal/macros. Format: "Estimated: [number] kcal".
+  2. If user exercises: Estimate burn. Format: "Burned: [number] kcal".
+  Keep it to 2 high-energy sentences. Use emojis. 
+  User message: "${message}"`;
   
   // 1. Add the text instructions
   parts.push({ text: `Context: Coach Gemini for 41yo male, 185cm, ${weight}kg. User message: ${message || "Analyze this meal photo."} Task: Estimate calories/macros and give 2 high-energy coaching sentences.` });
