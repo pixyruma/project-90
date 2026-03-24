@@ -123,7 +123,9 @@
             renderPlan();
         }
 
-        async function askCoach() {
+        // Replace your existing askCoach function with this:
+
+async function askCoach() {
     const input = document.getElementById('user-input');
     const msg = input.value;
     if(!msg && !selectedImageData) return;
@@ -138,39 +140,52 @@
         const res = await fetch('/api/chat', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ message: msg, weight: weightHistory[weightHistory.length-1], image: currentImg })
+            body: JSON.stringify({ 
+                message: msg, 
+                weight: weightHistory[weightHistory.length-1], 
+                image: currentImg 
+            })
         });
         const data = await res.json();
         const replyText = data.reply;
         document.getElementById('temp-loader')?.remove();
         addMessage(replyText, 'ai');
 
-        // 1. Calorie Logic (In/Out)
+        // 1. Calorie Intake (e.g. Estimated: 300 kcal)
         const inMatch = replyText.match(/Estimated:\s*(\d+)/i);
-        if(inMatch) { cIn += parseInt(inMatch[1]); lastAction = {type:'in', amount:parseInt(inMatch[1])}; }
+        if(inMatch) { 
+            const amt = parseInt(inMatch[1]);
+            cIn += amt; 
+            lastAction = {type:'in', amount:amt}; 
+        }
         
+        // 2. Calorie Burned (e.g. Burned: 200 kcal)
         const outMatch = replyText.match(/Burned:\s*(\d+)/i);
-        if(outMatch) { cOut += parseInt(outMatch[1]); lastAction = {type:'out', amount:parseInt(outMatch[1])}; }
+        if(outMatch) { 
+            const amt = parseInt(outMatch[1]);
+            cOut += amt; 
+            lastAction = {type:'out', amount:amt}; 
+        }
 
-        // 2. FIXED PLAN LOGIC: Catches "ADD_PLAN: Run | 200" or "ADD_PLAN: Run | [200]"
-        const planMatch = replyText.match(/ADD_PLAN:\s*([^|]+)\|\s*\[?(\d+)\]?/i);
+        // 3. FIXED ADD_PLAN Regex: Catches tasks with numbers, dashes, and varied spacing
+        const planMatch = replyText.match(/ADD_PLAN:\s*([^|]+)\|\s*(\d+)/i);
         if(planMatch) {
             const taskName = planMatch[1].trim();
             const taskKcal = parseInt(planMatch[2]);
             
+            // Add to the local array
             dailyPlan.push({
                 id: Date.now(),
                 task: taskName,
                 kcal: taskKcal,
                 done: false
             });
+            
             localStorage.setItem('p90_plan', JSON.stringify(dailyPlan));
             renderPlan();
             
-            // Visual confirmation it worked
-            setTimeout(() => {
-                switchTab('workout', document.querySelectorAll('.nav-item')[2]);
-            }, 800);
+            // Subtle notification
+            addMessage(`Task "${taskName}" added to Plan.`, 'ai');
         }
 
         saveAndSync();
