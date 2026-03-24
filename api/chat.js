@@ -5,22 +5,20 @@ export default async function handler(req) {
     const { message, image } = await req.json();
     const apiKey = process.env.GEMINI_API_KEY;
 
-    // Simplified prompt for maximum stability
-    const systemPrompt = "You are Coach Gemini. 41yo male, 185cm, 100kg. Goal: 90kg. Format: 'Estimated: [number] kcal' or 'Burned: [number] kcal'. 2 sentences max.";
-
+    const systemPrompt = "You are Coach Gemini. Format: 'Estimated: [number] kcal' or 'Burned: [number] kcal'. 2 sentences max.";
     const contents = [{
       parts: [{ text: systemPrompt + "\n\nUser: " + (message || "Analyze this.") }]
     }];
 
-    // Only attach image if it's actually there
+    // Only attach image if it's there
     if (image && image.length > 50) {
       contents[0].parts.push({
         inlineData: { mimeType: "image/jpeg", data: image }
       });
     }
 
-    // This is the most likely "Working" URL for 1.5 Flash
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    // TRY THIS URL - It is the most widely supported
+    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
     const response = await fetch(url, {
       method: 'POST',
@@ -31,6 +29,7 @@ export default async function handler(req) {
     const data = await response.json();
 
     if (data.error) {
+      // This will show the EXACT error in your chat box so we can fix it
       return new Response(JSON.stringify({ reply: "API Error: " + data.error.message }), { status: 200 });
     }
 
