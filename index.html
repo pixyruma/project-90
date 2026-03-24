@@ -13,9 +13,8 @@
         .glass { background: rgba(30, 41, 59, 0.5); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
         .tab-content { display: none; flex-direction: column; height: 100%; overflow-y: auto; padding-bottom: 220px; }
         .tab-active { display: flex !important; }
-        .nav-item { transition: all 0.3s ease; color: #64748b; background: none; border: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .nav-item { transition: all 0.2s ease; color: #64748b; background: none; border: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; }
         .nav-item.active { color: #a78bfa; filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.4)); }
-        .loading-dots::after { content: ' .'; animation: dots 1.5s steps(5, end) infinite; }
     </style>
 </head>
 <body>
@@ -45,7 +44,10 @@
         </section>
 
         <section id="tab-workout" class="tab-content p-5 space-y-4">
-            <h2 class="text-xl font-black italic uppercase text-violet-400">Daily Plan</h2>
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-black italic uppercase text-violet-400">Daily Plan</h2>
+                <button onclick="undoLast()" class="text-[10px] text-red-400 font-bold uppercase tracking-widest border border-red-400/20 px-3 py-1 rounded-lg">Undo ↩</button>
+            </div>
             <div class="space-y-3" id="plan-container">
                 <div class="glass p-4 rounded-2xl flex items-center justify-between">
                     <div><p class="text-sm font-bold uppercase">15m Walk</p><p class="text-[9px] text-slate-500">100 KCAL</p></div>
@@ -63,7 +65,12 @@
 
     <script>
         lucide.createIcons();
-        let cIn = 0, cOut = 0;
+        let cIn = parseInt(localStorage.getItem('p90_cals')) || 0;
+        let cOut = parseInt(localStorage.getItem('p90_burned')) || 0;
+        let lastAmt = 0;
+
+        document.getElementById('dash-cals').innerText = cIn;
+        document.getElementById('dash-burn').innerText = cOut;
 
         function switchTab(id, el) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('tab-active'));
@@ -73,8 +80,25 @@
             lucide.createIcons();
         }
 
+        function undoLast() {
+            cIn -= lastAmt;
+            lastAmt = 0;
+            save();
+            const m = document.createElement('div');
+            m.className = "glass p-3 rounded-2xl text-xs text-red-400";
+            m.innerText = "Undone last calorie entry.";
+            document.getElementById('chat-box').appendChild(m);
+        }
+
         function updateBurn(amt, cb) {
             cOut += cb.checked ? amt : -amt;
+            save();
+        }
+
+        function save() {
+            localStorage.setItem('p90_cals', cIn);
+            localStorage.setItem('p90_burned', cOut);
+            document.getElementById('dash-cals').innerText = cIn;
             document.getElementById('dash-burn').innerText = cOut;
             updateChart();
         }
@@ -98,7 +122,7 @@
                 document.getElementById('chat-box').appendChild(m);
 
                 const inMatch = data.reply.match(/Estimated:\s*(\d+)/i);
-                if(inMatch) { cIn += parseInt(inMatch[1]); document.getElementById('dash-cals').innerText = cIn; updateChart(); }
+                if(inMatch) { lastAmt = parseInt(inMatch[1]); cIn += lastAmt; save(); }
             } catch(e) {}
         }
 
