@@ -2,55 +2,42 @@ export const config = { runtime: 'edge' };
 
 export default async function handler(req) {
   try {
-    const body = await req.json();
-    const { message, weight, image } = body;
+    const { message, image } = await req.json();
     const apiKey = process.env.GEMINI_API_KEY;
 
-    // Use a very safe default if weight is missing
-    const userWeight = weight || 100;
+    // Simplified prompt for maximum stability
+    const systemPrompt = "You are Coach Gemini. 41yo male, 185cm, 100kg. Goal: 90kg. Format: 'Estimated: [number] kcal' or 'Burned: [number] kcal'. 2 sentences max.";
 
-    const systemPrompt = `You are Coach Gemini. 
-    Context: 41yo male, 185cm, ${userWeight}kg. Goal: 90kg.
-    1. Food: "Estimated: [number] kcal". 
-    2. Exercise: "Burned: [number] kcal".
-    3. Plan: "ADD_PLAN: [Task] | [kcal]".
-    Keep it to 2 high-energy sentences.`;
+    const contents = [{
+      parts: [{ text: systemPrompt + "\n\nUser: " + (message || "Analyze this.") }]
+    }];
 
-    // Reverting to the simplest possible Parts structure
-    let promptParts = [{ text: systemPrompt + "\nUser: " + (message || "Analyze this.") }];
-
-    // Only add image if it exists and is long enough to be a base64 string
+    // Only attach image if it's actually there
     if (image && image.length > 50) {
-      promptParts.push({
-        inlineData: {
-          mimeType: "image/jpeg",
-          data: image
-        }
+      contents[0].parts.push({
+        inlineData: { mimeType: "image/jpeg", data: image }
       });
     }
 
-    // Use the v1beta endpoint - it's the most reliable for Flash 1.5
+    // This is the most likely "Working" URL for 1.5 Flash
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: promptParts }]
-      })
+      body: JSON.stringify({ contents })
     });
 
     const data = await response.json();
 
     if (data.error) {
-      console.error("Gemini API Error:", data.error.message);
-      return new Response(JSON.stringify({ reply: "Coach Error: " + data.error.message }), { status: 200 });
+      return new Response(JSON.stringify({ reply: "API Error: " + data.error.message }), { status: 200 });
     }
 
     const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Coach is recalibrating.";
     return new Response(JSON.stringify({ reply }), { status: 200 });
 
   } catch (err) {
-    return new Response(JSON.stringify({ reply: "Server Error." }), { status: 500 });
+    return new Response(JSON.stringify({ reply: "Connection Error." }), { status: 500 });
   }
 }
