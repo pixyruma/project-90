@@ -7,16 +7,14 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         body { background: #020617; color: #f8fafc; font-family: 'Inter', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; margin: 0; }
         .glass { background: rgba(30, 41, 59, 0.5); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
-        .tab-content { display: none; flex-direction: column; height: 100%; overflow-y: auto; padding-bottom: 180px; }
+        .tab-content { display: none; flex-direction: column; height: 100%; overflow-y: auto; padding-bottom: 200px; }
         .tab-active { display: flex !important; }
         .nav-item { transition: all 0.3s ease; color: #64748b; background: none; border: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; }
         .nav-item.active { color: #a78bfa; filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.4)); }
-        #chat-box::-webkit-scrollbar { width: 0px; }
         .loading-dots::after { content: ' .'; animation: dots 1.5s steps(5, end) infinite; }
         @keyframes dots { 0%, 20% { color: rgba(0,0,0,0); text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0); } 40% { color: white; text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0); } 60% { text-shadow: .25em 0 0 white, .5em 0 0 rgba(0,0,0,0); } 80%, 100% { text-shadow: .25em 0 0 white, .5em 0 0 white; } }
     </style>
@@ -26,7 +24,7 @@
     <header class="p-5 flex justify-between items-center border-b border-white/5 bg-slate-950/50 shrink-0">
         <div>
             <h1 class="text-xl font-black italic text-violet-500 uppercase tracking-tighter">Project 90</h1>
-            <p id="current-date" class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">March 23, 2026</p>
+            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">March 23, 2026</p>
         </div>
         <div class="text-right">
             <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Weight Goal</p>
@@ -49,98 +47,74 @@
                     <p class="text-2xl font-black text-orange-400" id="dash-burn">0</p>
                 </div>
             </div>
-
             <div class="glass p-5 rounded-3xl h-64">
                 <canvas id="statsChart"></canvas>
             </div>
-
-            <div id="meal-history" class="hidden glass p-5 rounded-3xl animate-in fade-in slide-in-from-bottom-4">
+            <div id="meal-history" class="hidden glass p-5 rounded-3xl">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xs font-black uppercase tracking-widest text-violet-400">Meal History</h3>
-                    <button onclick="document.getElementById('meal-history').classList.add('hidden')"><i data-lucide="x" class="w-4 h-4 text-slate-400"></i></button>
+                    <h3 class="text-xs font-black uppercase tracking-widest text-violet-400 italic">Daily Logs</h3>
+                    <button onclick="document.getElementById('meal-history').classList.add('hidden')"><i data-lucide="x" class="w-4 h-4 text-slate-500"></i></button>
                 </div>
-                <div id="log-list" class="space-y-3 text-sm"></div>
+                <div id="log-list" class="space-y-2 text-[10px]"></div>
             </div>
         </section>
 
         <section id="tab-coach" class="tab-content flex-col h-full">
             <div id="chat-box" class="flex-1 overflow-y-auto p-5 space-y-4">
-                <div class="glass p-4 rounded-2xl rounded-tl-none text-sm text-slate-300">Coach Gemini is active. Analysis ready for photos or text.</div>
+                <div class="glass p-4 rounded-2xl rounded-tl-none text-sm text-slate-300">Ready for check-in. Photo or text?</div>
             </div>
-            
             <div class="fixed bottom-[90px] left-0 right-0 p-4 bg-slate-950/90 backdrop-blur-md border-t border-white/5 z-40">
                 <div id="image-preview-container" class="hidden mb-3">
                     <div class="relative inline-block">
                         <img id="image-preview" src="" class="w-16 h-16 rounded-xl object-cover border-2 border-violet-500">
-                        <button type="button" onclick="clearImage()" class="absolute -top-2 -right-2 bg-red-500 rounded-full p-1 shadow-lg"><i data-lucide="x" class="w-3 h-3 text-white"></i></button>
+                        <button onclick="clearImage()" class="absolute -top-2 -right-2 bg-red-500 rounded-full p-1"><i data-lucide="x" class="w-3 h-3 text-white"></i></button>
                     </div>
                 </div>
                 <div class="flex gap-2 max-w-md mx-auto">
                     <input type="file" id="image-input" accept="image/*" class="hidden" onchange="previewImage(this)">
-                    <button type="button" onclick="document.getElementById('image-input').click()" class="glass min-w-[52px] h-12 rounded-xl flex items-center justify-center active:bg-white/10">
-                        <i data-lucide="camera" class="w-6 h-6 text-slate-300"></i>
-                    </button>
-                    <input id="user-input" type="text" inputmode="text" placeholder="Message coach..." 
-                           onkeydown="if(event.key==='Enter') { event.preventDefault(); askCoach(); }" 
-                           class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 text-sm focus:border-violet-500 outline-none text-white">
-                    <button id="send-btn" type="button" onclick="askCoach()" class="bg-violet-600 min-w-[52px] h-12 rounded-xl flex items-center justify-center shadow-lg active:scale-90 transition-transform">
-                        <i data-lucide="send" class="w-5 h-5 text-white"></i>
-                    </button>
+                    <button type="button" onclick="document.getElementById('image-input').click()" class="glass min-w-[52px] h-12 rounded-xl flex items-center justify-center"><i data-lucide="camera" class="w-6 h-6 text-slate-400"></i></button>
+                    <input id="user-input" type="text" placeholder="I ate oats..." onkeydown="if(event.key==='Enter') { event.preventDefault(); askCoach(); }" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 text-sm outline-none text-white focus:border-violet-500">
+                    <button id="send-btn" onclick="askCoach()" class="bg-violet-600 min-w-[52px] h-12 rounded-xl flex items-center justify-center shadow-lg active:scale-90"><i data-lucide="send" class="w-5 h-5 text-white"></i></button>
                 </div>
             </div>
         </section>
 
         <section id="tab-workout" class="tab-content p-5 space-y-4">
-            <div class="flex items-center gap-2 mb-2">
-                <i data-lucide="dumbbell" class="text-violet-400"></i>
-                <h2 class="text-xl font-black italic uppercase tracking-tight">Today's Plan</h2>
+            <h2 class="text-xl font-black italic uppercase tracking-tight text-violet-400">Today's Plan</h2>
+            <div class="space-y-3" id="workout-items">
+                <div class="glass p-4 rounded-2xl flex items-center justify-between border-l-4 border-slate-700" id="w-1">
+                    <div><p class="text-sm font-bold uppercase">15m Fasted Walk</p><p class="text-[9px] text-slate-500 font-black">100 KCAL</p></div>
+                    <input type="checkbox" onchange="completeWorkout(1, 100, this)" class="w-6 h-6 rounded-lg accent-violet-500">
+                </div>
+                <div class="glass p-4 rounded-2xl flex items-center justify-between border-l-4 border-slate-700" id="w-2">
+                    <div><p class="text-sm font-bold uppercase">4 Sets Pushups</p><p class="text-[9px] text-slate-500 font-black">150 KCAL</p></div>
+                    <input type="checkbox" onchange="completeWorkout(2, 150, this)" class="w-6 h-6 rounded-lg accent-violet-500">
+                </div>
             </div>
-            <div class="glass p-6 rounded-3xl border-l-4 border-violet-500">
-                <ul id="workout-list" class="space-y-4 text-sm font-bold text-slate-300">
-                    <li class="flex items-center gap-3"><div class="w-1.5 h-1.5 rounded-full bg-violet-500"></div> 15 min Fasted Walk</li>
-                    <li class="flex items-center gap-3"><div class="w-1.5 h-1.5 rounded-full bg-violet-500"></div> 4 Sets Pushups (to failure)</li>
-                    <li class="flex items-center gap-3"><div class="w-1.5 h-1.5 rounded-full bg-violet-500"></div> 10 min Meditative Stretch</li>
-                </ul>
-            </div>
-            <button onclick="switchTab('coach', document.getElementById('btn-coach-nav'))" class="w-full py-4 glass rounded-2xl text-[10px] font-black uppercase tracking-widest text-violet-400 active:bg-violet-500/10">
-                Adjust with Coach AI ⚡
-            </button>
         </section>
     </main>
 
     <nav class="fixed bottom-0 left-0 right-0 glass border-t border-white/10 p-4 pb-8 flex justify-around items-center z-50">
-        <button id="btn-dash-nav" onclick="switchTab('dash', this)" class="nav-item active">
-            <i data-lucide="layout-dashboard" class="w-6 h-6"></i>
-            <span class="text-[9px] font-black uppercase tracking-widest">Stats</span>
-        </button>
-        <button id="btn-coach-nav" onclick="switchTab('coach', this)" class="nav-item">
-            <i data-lucide="bot" class="w-6 h-6"></i>
-            <span class="text-[9px] font-black uppercase tracking-widest">Coach</span>
-        </button>
-        <button id="btn-workout-nav" onclick="switchTab('workout', this)" class="nav-item">
-            <i data-lucide="activity" class="w-6 h-6"></i>
-            <span class="text-[9px] font-black uppercase tracking-widest">Plan</span>
-        </button>
+        <button onclick="switchTab('dash', this)" class="nav-item active"><i data-lucide="layout-dashboard" class="w-6 h-6"></i><span class="text-[9px] font-black uppercase tracking-widest">Stats</span></button>
+        <button onclick="switchTab('coach', this)" class="nav-item"><i data-lucide="bot" class="w-6 h-6"></i><span class="text-[9px] font-black uppercase tracking-widest">Coach</span></button>
+        <button onclick="switchTab('workout', this)" class="nav-item"><i data-lucide="activity" class="w-6 h-6"></i><span class="text-[9px] font-black uppercase tracking-widest">Plan</span></button>
     </nav>
 
     <script>
-        // Start Lucide
         lucide.createIcons();
-
-        // PERSISTENCE STATE
-        let calories = parseInt(localStorage.getItem('p90_cals')) || 0;
+        let caloriesIn = parseInt(localStorage.getItem('p90_cals')) || 0;
+        let caloriesOut = parseInt(localStorage.getItem('p90_burned')) || 0;
         let mealLog = JSON.parse(localStorage.getItem('p90_log')) || [];
         let selectedImageData = null;
-        let burned = parseInt(localStorage.getItem('p90_burned')) || 0;
-document.getElementById('dash-burn').innerText = burned;
-        document.getElementById('dash-cals').innerText = calories;
+
+        document.getElementById('dash-cals').innerText = caloriesIn;
+        document.getElementById('dash-burn').innerText = caloriesOut;
 
         function switchTab(tabId, el) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('tab-active'));
             document.getElementById('tab-' + tabId).classList.add('tab-active');
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             if(el) el.classList.add('active');
-            // Refresh icons in case any were hidden
             lucide.createIcons();
         }
 
@@ -166,116 +140,84 @@ document.getElementById('dash-burn').innerText = burned;
         function addMessage(t, s) {
             const b = document.getElementById('chat-box');
             const m = document.createElement('div');
-            if (s === 'loading') {
-                m.className = "glass p-3 rounded-2xl rounded-tl-none text-slate-400 max-w-[85%] loading-dots text-sm";
-                m.id = "temp-loader";
-                m.innerText = "Coach is analyzing";
-            } else {
-                m.className = s === 'user' ? "bg-violet-600 p-3 rounded-2xl rounded-tr-none ml-auto max-w-[85%] text-white text-sm shadow-lg" : "glass p-3 rounded-2xl rounded-tl-none text-slate-300 max-w-[85%] text-sm";
-                m.innerText = t;
-            }
+            if (s === 'loading') { m.className = "glass p-3 rounded-2xl text-slate-400 loading-dots text-sm"; m.id = "temp-loader"; m.innerText = "Coach thinking"; }
+            else { m.className = s === 'user' ? "bg-violet-600 p-3 rounded-2xl ml-auto max-w-[85%] text-white text-sm" : "glass p-3 rounded-2xl text-slate-300 max-w-[85%] text-sm"; m.innerText = t; }
             b.appendChild(m);
             b.scrollTop = b.scrollHeight;
         }
 
+        function completeWorkout(id, kcal, checkbox) {
+            const row = document.getElementById('w-' + id);
+            if (checkbox.checked) { row.classList.replace('border-slate-700', 'border-emerald-500'); caloriesOut += kcal; }
+            else { row.classList.replace('border-emerald-500', 'border-slate-700'); caloriesOut -= kcal; }
+            localStorage.setItem('p90_burned', caloriesOut);
+            document.getElementById('dash-burn').innerText = caloriesOut;
+            updateChart();
+        }
+
         async function askCoach() {
-    const inputField = document.getElementById('user-input');
-    const sendBtn = document.getElementById('send-btn');
-    const message = inputField.value.trim();
-    
-    if (!message && !selectedImageData) return;
+            const inputField = document.getElementById('user-input');
+            const msg = inputField.value.trim();
+            if (!msg && !selectedImageData) return;
 
-    sendBtn.disabled = true;
-    sendBtn.style.opacity = "0.5";
+            addMessage(msg || "Analyzing...", 'user');
+            inputField.value = '';
+            const img = selectedImageData;
+            clearImage();
+            addMessage("", 'loading');
 
-    addMessage(message || "Analyzing...", 'user');
-    inputField.value = '';
-    
-    const currentImg = selectedImageData;
-    clearImage();
-    addMessage("", 'loading');
+            try {
+                const res = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: msg, weight: 100, calories: caloriesIn, image: img })
+                });
+                const data = await res.json();
+                document.getElementById('temp-loader')?.remove();
+                addMessage(data.reply, 'ai');
 
-    try {
-        const response = await fetch('/api/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: message, weight: 100, image: currentImg })
-        });
+                // Regex for "Estimated: 500 kcal" OR "Burned: 300 kcal"
+                const inMatch = data.reply.match(/Estimated:\s*(\d+)/i);
+                const outMatch = data.reply.match(/Burned:\s*(\d+)/i);
 
-        const data = await response.json();
-        document.getElementById('temp-loader')?.remove();
-        addMessage(data.reply, 'ai');
-
-        // --- CALORIE TRACKING LOGIC ---
-        
-        // 1. Check for "Estimated: XXX kcal" (Food)
-        const foodMatch = data.reply.match(/Estimated:\s*(\d+)\s*kcal/i);
-        if (foodMatch) {
-            const amount = parseInt(foodMatch[1]);
-            calories += amount;
-            localStorage.setItem('p90_cals', calories);
-            document.getElementById('dash-cals').innerText = calories;
-            mealLog.push({ time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}), desc: message || "Photo Log", cals: amount });
-            localStorage.setItem('p90_log', JSON.stringify(mealLog));
+                if (inMatch) {
+                    const amt = parseInt(inMatch[1]);
+                    caloriesIn += amt;
+                    localStorage.setItem('p90_cals', caloriesIn);
+                    document.getElementById('dash-cals').innerText = caloriesIn;
+                    mealLog.push({ time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}), desc: msg || "Meal Photo", cals: amt });
+                    localStorage.setItem('p90_log', JSON.stringify(mealLog));
+                }
+                if (outMatch) {
+                    caloriesOut += parseInt(outMatch[1]);
+                    localStorage.setItem('p90_burned', caloriesOut);
+                    document.getElementById('dash-burn').innerText = caloriesOut;
+                }
+                updateChart();
+            } catch (e) { document.getElementById('temp-loader')?.remove(); addMessage("Glitch.", 'ai'); }
         }
-
-        // 2. Check for "Burned: XXX kcal" (Exercise)
-        const burnMatch = data.reply.match(/Burned:\s*(\d+)\s*kcal/i);
-        if (burnMatch) {
-            const amount = parseInt(burnMatch[1]);
-            let totalBurned = parseInt(localStorage.getItem('p90_burned')) || 0;
-            totalBurned += amount;
-            localStorage.setItem('p90_burned', totalBurned);
-            document.getElementById('dash-burn').innerText = totalBurned;
-        }
-
-        updateChart(); // Refresh the bars
-
-    } catch (e) {
-        document.getElementById('temp-loader')?.remove();
-        addMessage("Connection error.", 'ai');
-    } finally {
-        sendBtn.disabled = false;
-        sendBtn.style.opacity = "1";
-    }
-}
 
         function showMealLog() {
             const list = document.getElementById('log-list');
-            document.getElementById('meal-history').classList.remove('hidden');
-            list.innerHTML = mealLog.length ? mealLog.slice().reverse().map(m => `
-                <div class="flex justify-between border-b border-white/5 pb-2 uppercase text-[10px]">
-                    <span class="text-slate-500 font-bold">${m.time}</span>
-                    <span class="text-white truncate mx-2 flex-1">${m.desc}</span>
-                    <span class="text-emerald-400 font-black">${m.cals} kcal</span>
-                </div>
-            `).join('') : '<p class="text-slate-500 italic text-center">No logs yet today.</p>';
+            document.getElementById('meal-history').classList.toggle('hidden');
+            list.innerHTML = mealLog.slice().reverse().map(m => `<div class="flex justify-between border-b border-white/5 pb-1"><span>${m.time}</span><span class="truncate mx-2">${m.desc}</span><span class="text-emerald-400 font-bold">${m.cals}</span></div>`).join('');
         }
 
         const ctx = document.getElementById('statsChart').getContext('2d');
         const statsChart = new Chart(ctx, {
             type: 'bar',
-            data: {
-                labels: ['M', 'T', 'W', 'T', 'F', 'S', 'S'],
-                datasets: [{ label: 'In', data: [0, 0, 0, calories, 0, 0, 0], backgroundColor: '#10b981', borderRadius: 5 }]
-            },
-            options: { 
-                responsive: true, 
-                maintainAspectRatio: false, 
-                scales: { 
-                    y: { display: false }, 
-                    x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 10 } } } 
-                }, 
-                plugins: { legend: { display: false } } 
-            }
+            data: { labels: ['M', 'T', 'W', 'T', 'F', 'S', 'S'], datasets: [
+                { label: 'In', data: [0, 0, 0, caloriesIn, 0, 0, 0], backgroundColor: '#10b981', borderRadius: 4 },
+                { label: 'Out', data: [0, 0, 0, caloriesOut, 0, 0, 0], backgroundColor: '#f97316', borderRadius: 4 }
+            ]},
+            options: { responsive: true, maintainAspectRatio: false, scales: { y: { display: false }, x: { grid: { display: false }, ticks: { color: '#475569' } } }, plugins: { legend: { display: false } } }
         });
 
         function updateChart() {
-            // Update "Thursday" (Index 3) for this demo
-            statsChart.data.datasets[0].data[3] = calories; 
+            statsChart.data.datasets[0].data[3] = caloriesIn;
+            statsChart.data.datasets[1].data[3] = caloriesOut;
             statsChart.update();
         }
-        updateChart();
     </script>
 </body>
 </html>
