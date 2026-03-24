@@ -18,7 +18,7 @@ export default async function handler(req) {
   if (image) parts.push({ inlineData: { mimeType: "image/jpeg", data: image } });
 
   try {
-    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
