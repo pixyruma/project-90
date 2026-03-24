@@ -177,58 +177,66 @@
         }
 
         async function askCoach() {
-            const inputField = document.getElementById('user-input');
-            const sendBtn = document.getElementById('send-btn');
-            const message = inputField.value.trim();
-            
-            if (!message && !selectedImageData) return;
+    const inputField = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-btn');
+    const message = inputField.value.trim();
+    
+    if (!message && !selectedImageData) return;
 
-            // UI Lockdown
-            sendBtn.disabled = true;
-            sendBtn.style.opacity = "0.5";
+    sendBtn.disabled = true;
+    sendBtn.style.opacity = "0.5";
 
-            addMessage(message || "Analyzing meal...", 'user');
-            inputField.value = '';
-            
-            const currentImg = selectedImageData;
-            clearImage();
-            addMessage("", 'loading');
+    addMessage(message || "Analyzing...", 'user');
+    inputField.value = '';
+    
+    const currentImg = selectedImageData;
+    clearImage();
+    addMessage("", 'loading');
 
-            try {
-                const response = await fetch('/api/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: message, weight: 100, calories: calories, image: currentImg })
-                });
+    try {
+        const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: message, weight: 100, image: currentImg })
+        });
 
-                const data = await response.json();
-                document.getElementById('temp-loader')?.remove();
-                addMessage(data.reply, 'ai');
+        const data = await response.json();
+        document.getElementById('temp-loader')?.remove();
+        addMessage(data.reply, 'ai');
 
-                // Calorie Extraction
-                const calMatch = data.reply.match(/(\d+)\s*kcal/i);
-                if (calMatch) {
-                    const amount = parseInt(calMatch[1]);
-                    calories += amount;
-                    localStorage.setItem('p90_cals', calories);
-                    document.getElementById('dash-cals').innerText = calories;
-                    
-                    mealLog.push({ 
-                        time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}), 
-                        desc: message || "Photo Log", 
-                        cals: amount 
-                    });
-                    localStorage.setItem('p90_log', JSON.stringify(mealLog));
-                    updateChart();
-                }
-            } catch (e) {
-                document.getElementById('temp-loader')?.remove();
-                addMessage("Connection error. Is the server running?", 'ai');
-            } finally {
-                sendBtn.disabled = false;
-                sendBtn.style.opacity = "1";
-            }
+        // --- CALORIE TRACKING LOGIC ---
+        
+        // 1. Check for "Estimated: XXX kcal" (Food)
+        const foodMatch = data.reply.match(/Estimated:\s*(\d+)\s*kcal/i);
+        if (foodMatch) {
+            const amount = parseInt(foodMatch[1]);
+            calories += amount;
+            localStorage.setItem('p90_cals', calories);
+            document.getElementById('dash-cals').innerText = calories;
+            mealLog.push({ time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}), desc: message || "Photo Log", cals: amount });
+            localStorage.setItem('p90_log', JSON.stringify(mealLog));
         }
+
+        // 2. Check for "Burned: XXX kcal" (Exercise)
+        const burnMatch = data.reply.match(/Burned:\s*(\d+)\s*kcal/i);
+        if (burnMatch) {
+            const amount = parseInt(burnMatch[1]);
+            let totalBurned = parseInt(localStorage.getItem('p90_burned')) || 0;
+            totalBurned += amount;
+            localStorage.setItem('p90_burned', totalBurned);
+            document.getElementById('dash-burn').innerText = totalBurned;
+        }
+
+        updateChart(); // Refresh the bars
+
+    } catch (e) {
+        document.getElementById('temp-loader')?.remove();
+        addMessage("Connection error.", 'ai');
+    } finally {
+        sendBtn.disabled = false;
+        sendBtn.style.opacity = "1";
+    }
+}
 
         function showMealLog() {
             const list = document.getElementById('log-list');
