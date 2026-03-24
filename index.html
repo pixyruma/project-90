@@ -124,44 +124,61 @@
         }
 
         async function askCoach() {
-            const input = document.getElementById('user-input');
-            const msg = input.value;
-            if(!msg && !selectedImageData) return;
+    const input = document.getElementById('user-input');
+    const msg = input.value;
+    if(!msg && !selectedImageData) return;
+    
+    addMessage(msg || "Analyzing...", 'user');
+    input.value = '';
+    const currentImg = selectedImageData;
+    clearImage();
+    addMessage("", 'loading');
+
+    try {
+        const res = await fetch('/api/chat', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ message: msg, weight: weightHistory[weightHistory.length-1], image: currentImg })
+        });
+        const data = await res.json();
+        const replyText = data.reply;
+        document.getElementById('temp-loader')?.remove();
+        addMessage(replyText, 'ai');
+
+        // 1. Calorie Logic (In/Out)
+        const inMatch = replyText.match(/Estimated:\s*(\d+)/i);
+        if(inMatch) { cIn += parseInt(inMatch[1]); lastAction = {type:'in', amount:parseInt(inMatch[1])}; }
+        
+        const outMatch = replyText.match(/Burned:\s*(\d+)/i);
+        if(outMatch) { cOut += parseInt(outMatch[1]); lastAction = {type:'out', amount:parseInt(outMatch[1])}; }
+
+        // 2. FIXED PLAN LOGIC: Catches "ADD_PLAN: Run | 200" or "ADD_PLAN: Run | [200]"
+        const planMatch = replyText.match(/ADD_PLAN:\s*([^|]+)\|\s*\[?(\d+)\]?/i);
+        if(planMatch) {
+            const taskName = planMatch[1].trim();
+            const taskKcal = parseInt(planMatch[2]);
             
-            addMessage(msg || "Analyzing photo...", 'user');
-            input.value = '';
-            const currentImg = selectedImageData;
-            clearImage();
-            addMessage("", 'loading');
-
-            try {
-                const res = await fetch('/api/chat', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ message: msg, weight: weightHistory[weightHistory.length-1], image: currentImg })
-                });
-                const data = await res.json();
-                document.getElementById('temp-loader')?.remove();
-                addMessage(data.reply, 'ai');
-
-                // 1. Calorie Logic
-                const inMatch = data.reply.match(/Estimated:\s*(\d+)/i);
-                if(inMatch) { const amt = parseInt(inMatch[1]); cIn += amt; lastAction = {type:'in', amount:amt}; }
-                
-                const outMatch = data.reply.match(/Burned:\s*(\d+)/i);
-                if(outMatch) { const amt = parseInt(outMatch[1]); cOut += amt; lastAction = {type:'out', amount:amt}; }
-
-                // 2. Plan Logic: ADD_PLAN: Name | Kcal
-                const planMatch = data.reply.match(/ADD_PLAN:\s*([^|]+)\|\s*(\d+)/i);
-                if(planMatch) {
-                    dailyPlan.push({id: Date.now(), task: planMatch[1].trim(), kcal: parseInt(planMatch[2]), done: false});
-                    localStorage.setItem('p90_plan', JSON.stringify(dailyPlan));
-                    renderPlan();
-                }
-
-                saveAndSync();
-            } catch(e) { document.getElementById('temp-loader')?.remove(); addMessage("Offline.", 'ai'); }
+            dailyPlan.push({
+                id: Date.now(),
+                task: taskName,
+                kcal: taskKcal,
+                done: false
+            });
+            localStorage.setItem('p90_plan', JSON.stringify(dailyPlan));
+            renderPlan();
+            
+            // Visual confirmation it worked
+            setTimeout(() => {
+                switchTab('workout', document.querySelectorAll('.nav-item')[2]);
+            }, 800);
         }
+
+        saveAndSync();
+    } catch(e) { 
+        document.getElementById('temp-loader')?.remove(); 
+        addMessage("Connection glitch.", 'ai'); 
+    }
+}
 
         function undoLast() {
             if(!lastAction) return;
