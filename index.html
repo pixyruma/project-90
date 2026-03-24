@@ -8,136 +8,172 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body { background: #020617; color: #f8fafc; font-family: sans-serif; height: 100vh; overflow: hidden; margin:0; display:flex; flex-direction:column; }
-        .glass { background: rgba(30, 41, 59, 0.5); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.05); }
-        .tab-content { display:none; flex-grow:1; overflow-y:auto; padding-bottom: 120px; }
-        .active { display: flex !important; }
-        .nav-btn.active { color: #a78bfa; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { background: #020617; color: #f8fafc; font-family: 'Inter', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; margin: 0; }
+        .glass { background: rgba(30, 41, 59, 0.4); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .tab-content { display: none; flex-direction: column; height: 100%; overflow-y: auto; padding-bottom: 240px; }
+        .tab-active { display: flex !important; }
+        .nav-item { color: #64748b; transition: all 0.2s; background: none; border: none; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; }
+        .nav-item.active { color: #a78bfa; }
+        .loading-dots::after { content: ' .'; animation: dots 1.5s steps(5, end) infinite; }
+        @keyframes dots { 0%, 20% { color: rgba(0,0,0,0); } 40% { color: white; } 60% { text-shadow: .25em 0 0 white; } 80%, 100% { text-shadow: .25em 0 0 white, .5em 0 0 white; } }
     </style>
 </head>
-<body class="safe-area-inset">
+<body>
 
-    <header class="p-6 flex justify-between items-center bg-slate-950/80 border-b border-white/5">
+    <header class="p-5 flex justify-between items-center border-b border-white/5 bg-slate-950/50 shrink-0">
         <h1 class="text-xl font-black italic text-violet-500 uppercase tracking-tighter">Project 90</h1>
-        <div id="weight-display" onclick="openWeight()" class="text-right cursor-pointer">
-            <span class="text-2xl font-black" id="cur-weight">0.0</span><span class="text-xs text-slate-500 ml-1 uppercase">kg</span>
-        </div>
+        <button onclick="openWeightModal()" class="glass px-4 py-2 rounded-xl flex flex-col items-end">
+            <p class="text-[9px] font-black text-violet-400 uppercase tracking-widest">Current</p>
+            <p class="text-lg font-black text-white leading-none"><span id="head-weight">100.0</span><span class="text-[10px] ml-0.5 text-slate-500 uppercase">kg</span></p>
+        </button>
     </header>
 
-    <main class="flex-grow relative overflow-hidden">
-        <div id="tab-dash" class="tab-content active flex-col p-6 space-y-6">
+    <main class="flex-1 overflow-hidden relative">
+        <section id="tab-dash" class="tab-content tab-active p-5 space-y-6">
             <div class="grid grid-cols-2 gap-4">
-                <div class="glass p-4 rounded-3xl"><p class="text-[10px] uppercase font-bold text-slate-500">Intake</p><p class="text-2xl font-black text-emerald-400" id="stat-in">0</p></div>
-                <div class="glass p-4 rounded-3xl"><p class="text-[10px] uppercase font-bold text-slate-500">Burned</p><p class="text-2xl font-black text-orange-400" id="stat-out">0</p></div>
+                <div class="glass p-5 rounded-3xl"><p class="text-[10px] font-bold text-slate-500 uppercase mb-1">Cals In</p><p class="text-2xl font-black text-emerald-400" id="dash-cals">0</p></div>
+                <div class="glass p-5 rounded-3xl"><p class="text-[10px] font-bold text-slate-500 uppercase mb-1">Burned</p><p class="text-2xl font-black text-orange-400" id="dash-burn">0</p></div>
             </div>
-            <div class="glass p-4 rounded-3xl h-64"><canvas id="mainChart"></canvas></div>
-        </div>
+            <div class="glass p-5 rounded-3xl h-52"><canvas id="statsChart"></canvas></div>
+        </section>
 
-        <div id="tab-coach" class="tab-content flex-col h-full">
-            <div id="chat-box" class="flex-grow p-6 space-y-4 overflow-y-auto"></div>
-            <div class="p-4 glass border-t border-white/5 bg-slate-900/90 mb-20">
+        <section id="tab-coach" class="tab-content flex-col h-full">
+            <div id="chat-box" class="flex-1 overflow-y-auto p-5 space-y-4"></div>
+            <div class="fixed bottom-[90px] left-0 right-0 p-4 bg-slate-950/90 border-t border-white/5 z-40">
+                <div id="image-preview-container" class="hidden mb-2 relative ml-4">
+                    <img id="image-preview" src="" class="w-16 h-16 rounded-xl object-cover border-2 border-violet-500">
+                    <button onclick="clearImage()" class="absolute -top-2 -right-2 bg-red-500 rounded-full p-1"><i data-lucide="x" class="w-3 h-3 text-white"></i></button>
+                </div>
                 <div class="flex gap-2 max-w-md mx-auto">
-                    <input id="user-input" type="text" placeholder="I ate... / I ran..." class="flex-grow bg-slate-950 border border-slate-800 rounded-2xl px-4 text-sm outline-none focus:border-violet-500">
-                    <button onclick="askCoach()" class="bg-violet-600 p-3 rounded-2xl active:scale-95"><i data-lucide="send" class="w-5 h-5"></i></button>
+                    <input type="file" id="image-input" accept="image/*" class="hidden" onchange="previewImage(this)">
+                    <button onclick="document.getElementById('image-input').click()" class="glass min-w-[52px] h-12 rounded-xl flex items-center justify-center"><i data-lucide="camera" class="w-6 h-6 text-slate-400"></i></button>
+                    <input id="user-input" type="text" placeholder="I ate a pizza..." onkeydown="if(event.key==='Enter') askCoach()" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 text-sm text-white focus:border-violet-500 outline-none">
+                    <button onclick="askCoach()" class="bg-violet-600 min-w-[52px] h-12 rounded-xl flex items-center justify-center"><i data-lucide="send" class="w-5 h-5 text-white"></i></button>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <div id="tab-plan" class="tab-content flex-col p-6 space-y-4">
-            <h2 class="text-sm font-bold uppercase text-slate-500 tracking-widest">Today's Tasks</h2>
-            <div id="plan-list" class="space-y-3"></div>
-        </div>
+        <section id="tab-workout" class="tab-content p-5 space-y-4">
+            <h2 class="text-xl font-black italic uppercase text-violet-400">Active Plan</h2>
+            <div id="plan-container" class="space-y-3"></div>
+        </section>
     </main>
 
-    <nav class="fixed bottom-0 w-full glass border-t border-white/10 p-4 pb-8 flex justify-around z-50">
-        <button onclick="showTab('dash', this)" class="nav-btn active flex flex-col items-center gap-1"><i data-lucide="layout-grid"></i><span class="text-[9px] uppercase font-bold">Stats</span></button>
-        <button onclick="showTab('coach', this)" class="nav-btn flex flex-col items-center gap-1"><i data-lucide="message-square"></i><span class="text-[9px] uppercase font-bold">Coach</span></button>
-        <button onclick="showTab('plan', this)" class="nav-btn flex flex-col items-center gap-1"><i data-lucide="check-square"></i><span class="text-[9px] uppercase font-bold">Plan</span></button>
+    <nav class="fixed bottom-0 left-0 right-0 glass border-t border-white/10 p-4 pb-8 flex justify-around items-center z-50">
+        <button onclick="switchTab('dash', this)" class="nav-item active"><i data-lucide="layout-dashboard"></i><span class="text-[9px] font-bold uppercase">Stats</span></button>
+        <button onclick="switchTab('coach', this)" class="nav-item"><i data-lucide="bot"></i><span class="text-[9px] font-bold uppercase">Coach</span></button>
+        <button onclick="switchTab('workout', this)" class="nav-item"><i data-lucide="activity"></i><span class="text-[9px] font-bold uppercase">Plan</span></button>
     </nav>
 
     <script>
         lucide.createIcons();
         let state = JSON.parse(localStorage.getItem('p90_state')) || { in: 0, out: 0, weights: [100.0], plan: [] };
+        let selectedImageData = null;
 
-        function save() { 
-            localStorage.setItem('p90_state', JSON.stringify(state)); 
-            updateUI(); 
+        function save() {
+            localStorage.setItem('p90_state', JSON.stringify(state));
+            updateUI();
         }
 
         function updateUI() {
-            document.getElementById('stat-in').innerText = state.in;
-            document.getElementById('stat-out').innerText = state.out;
-            document.getElementById('cur-weight').innerText = state.weights[state.weights.length-1].toFixed(1);
+            document.getElementById('dash-cals').innerText = state.in;
+            document.getElementById('dash-burn').innerText = state.out;
+            document.getElementById('head-weight').innerText = state.weights[state.weights.length-1].toFixed(1);
             
-            const list = document.getElementById('plan-list');
-            list.innerHTML = state.plan.map((item, i) => `
-                <div class="glass p-4 rounded-2xl flex items-center justify-between border-l-4 ${item.done ? 'border-emerald-500 opacity-40' : 'border-violet-500'}">
-                    <div><p class="font-bold text-sm">${item.task}</p><p class="text-[10px] text-slate-500">${item.kcal} KCAL</p></div>
-                    <input type="checkbox" ${item.done ? 'checked' : ''} onchange="toggleItem(${i})" class="w-6 h-6 rounded-lg accent-violet-500">
+            const container = document.getElementById('plan-container');
+            container.innerHTML = state.plan.map((i, idx) => `
+                <div class="glass p-4 rounded-2xl flex items-center justify-between border-l-4 ${i.done ? 'border-emerald-500 opacity-50' : 'border-slate-700'}">
+                    <div><p class="text-sm font-bold uppercase">${i.task}</p><p class="text-[9px] text-slate-500">${i.kcal} KCAL</p></div>
+                    <input type="checkbox" ${i.done ? 'checked' : ''} onchange="togglePlanItem(${idx})" class="w-6 h-6 rounded-lg accent-violet-500">
                 </div>
             `).join('');
-            chart.update();
+            if(chart) {
+                chart.data.datasets[0].data[0] = state.in;
+                chart.data.datasets[1].data[0] = state.out;
+                chart.update();
+            }
         }
 
-        function toggleItem(i) {
-            state.plan[i].done = !state.plan[i].done;
-            state.out += state.plan[i].done ? state.plan[i].kcal : -state.plan[i].kcal;
+        function togglePlanItem(idx) {
+            state.plan[idx].done = !state.plan[idx].done;
+            state.out += state.plan[idx].done ? state.plan[idx].kcal : -state.plan[idx].kcal;
             save();
         }
 
         async function askCoach() {
             const input = document.getElementById('user-input');
             const msg = input.value;
-            if(!msg) return;
+            if(!msg && !selectedImageData) return;
             
-            addMsg(msg, 'user');
+            addMessage(msg || "Analyzing image...", 'user');
             input.value = '';
-            
+            const currentImg = selectedImageData;
+            clearImage();
+            addMessage("", 'loading');
+
             try {
                 const res = await fetch('/api/chat', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ message: msg, weight: state.weights[state.weights.length-1] })
+                    body: JSON.stringify({ message: msg, weight: state.weights[state.weights.length-1], image: currentImg })
                 });
                 const data = await res.json();
-                
-                // Silent Logic Updates
+                document.getElementById('temp-loader')?.remove();
+
                 if(data.calories_in) state.in += data.calories_in;
                 if(data.calories_out) state.out += data.calories_out;
                 if(data.add_to_plan) state.plan.push({...data.add_to_plan, done: false});
                 
                 save();
-                addMsg(data.reply, 'ai', data.macros);
-            } catch(e) { addMsg("Coach connection lost.", 'ai'); }
+                addMessage(data.reply, 'ai', data.macros);
+            } catch(e) { 
+                document.getElementById('temp-loader')?.remove(); 
+                addMessage("Coach had a glitch. Try again.", 'ai'); 
+            }
         }
 
-        function addMsg(t, type, sub="") {
-            const box = document.getElementById('chat-box');
-            const div = document.createElement('div');
-            div.className = type === 'user' ? "ml-auto bg-violet-600 p-4 rounded-2xl max-w-[80%] text-sm" : "glass p-4 rounded-2xl max-w-[80%] text-sm";
-            div.innerHTML = `<p>${t}</p>${sub ? `<p class="text-[10px] mt-2 text-slate-400 font-mono">${sub}</p>` : ""}`;
-            box.appendChild(div);
-            box.scrollTop = box.scrollHeight;
+        function switchTab(t, el) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('tab-active'));
+            document.getElementById('tab-'+t).classList.add('tab-active');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            el.classList.add('active');
+            lucide.createIcons();
         }
 
-        function showTab(tab, btn) {
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('tab-'+tab).classList.add('active');
-            btn.classList.add('active');
+        function previewImage(i) {
+            const file = i.files[0];
+            if(file) {
+                const r = new FileReader();
+                r.onload = (e) => {
+                    selectedImageData = e.target.result.split(',')[1];
+                    document.getElementById('image-preview').src = e.target.result;
+                    document.getElementById('image-preview-container').classList.remove('hidden');
+                };
+                r.readAsDataURL(file);
+            }
         }
 
-        const ctx = document.getElementById('mainChart').getContext('2d');
-        const chart = new Chart(ctx, {
-            type: 'bar',
-            data: { labels: ['Today'], datasets: [{ label: 'In', data: [state.in], backgroundColor: '#10b981' }, { label: 'Out', data: [state.out], backgroundColor: '#f97316' }] },
-            options: { responsive: true, maintainAspectRatio: false, scales: { y: { display: false }, x: { grid: { display: false } } }, plugins: { legend: { display: false } } }
-        });
-
-        function openWeight() {
-            const w = prompt("Current Weight (kg):", state.weights[state.weights.length-1]);
-            if(w) { state.weights.push(parseFloat(w)); save(); }
+        function clearImage() {
+            selectedImageData = null;
+            document.getElementById('image-preview-container').classList.add('hidden');
+            document.getElementById('image-input').value = '';
         }
+
+        function addMessage(t, s, sub="") {
+            const b = document.getElementById('chat-box');
+            const m = document.createElement('div');
+            if(s==='loading'){m.className="glass p-3 rounded-2xl text-slate-400 loading-dots text-sm"; m.id="temp-loader"; m.innerText="Thinking";}
+            else {
+                m.className=s==='user'?"bg-violet-600 p-3 rounded-2xl ml-auto max-w-[85%] text-white text-sm":"glass p-3 rounded-2xl text-slate-300 max-w-[85%] text-sm";
+                m.innerHTML = `<p>${t}</p>${sub ? `<p class="text-[10px] mt-2 text-slate-500 font-mono border-t border-white/5 pt-2">${sub}</p>` : ""}`;
+            }
+            b.appendChild(m);
+            b.scrollTop=b.scrollHeight;
+        }
+
+        const ctx = document.getElementById('statsChart').getContext('2d');
+        const chart = new Chart(ctx, { type: 'bar', data: { labels: ['Today'], datasets: [{label:'In', data:[state.in], backgroundColor:'#10b981'}, {label:'Out', data:[state.out], backgroundColor:'#f97316'}] }, options: { responsive: true, maintainAspectRatio: false, scales: { y:{display:false}, x:{grid:{display:false}} }, plugins: { legend: { display: false } } } });
 
         updateUI();
     </script>
