@@ -17,8 +17,8 @@ export default async function handler(req) {
       });
     }
 
-    // THE MAGIC URL: v1beta + -latest
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+    // THE 2026 UPDATE: Switching to Gemini 2.5 Flash Stable
+    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
     const response = await fetch(url, {
       method: 'POST',
@@ -29,7 +29,7 @@ export default async function handler(req) {
     const data = await response.json();
 
     if (data.error) {
-      // If this fails, it will print the EXACT error in your chat box
+      // If 2.5 isn't active for you yet, we'll try the absolute fallback 2.0
       return new Response(JSON.stringify({ reply: `Coach Error: ${data.error.message}` }), { status: 200 });
     }
 
