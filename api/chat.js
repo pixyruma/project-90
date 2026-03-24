@@ -5,15 +5,16 @@ export default async function handler(req) {
     const { message, image, weight } = await req.json();
     const apiKey = process.env.GEMINI_API_KEY;
 
-    // IMPROVED PROMPT: Encourages personality while keeping the data tags
-    const systemPrompt = `You are Coach Gemini, a motivating fitness expert. 
-    1. Give a brief, supportive reaction to the user's meal or activity.
-    2. Offer one tiny tip related to their goal of reaching 90kg.
-    3. MANDATORY: End your response with 'Estimated: [number] kcal' or 'Burned: [number] kcal' on a new line.
-    Total length: Max 3 sentences.`;
+    // SYSTEM PROMPT: Optimized for Macros and Plan Management
+    const systemPrompt = `You are Coach Gemini. Goal: Help the user reach 90kg.
+    1. For food: Provide a clear breakdown of Calories, Carbs, Protein, and Fat.
+    2. To add a task to the Plan tab: Use the EXACT format 'ADD_PLAN: Task Name | [number]'.
+    3. To log intake: Include 'Estimated: [number] kcal'.
+    4. To log activity: Include 'Burned: [number] kcal'.
+    Keep responses under 4 sentences. Be scientific and motivating.`;
     
     const contents = [{
-      parts: [{ text: `${systemPrompt}\n\nUser is currently ${weight}kg.\nUser Message: ${message || "Analyze this."}` }]
+      parts: [{ text: `${systemPrompt}\n\nUser Current Weight: ${weight}kg\nUser Message: ${message || "Analyze this."}` }]
     }];
 
     if (image && image.length > 50) {
